@@ -1,0 +1,6 @@
+# Core dependencies
+langchain
+openai
+anthropic
+# For UNO API
+unopython
