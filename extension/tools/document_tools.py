@@ -1,5 +1,6 @@
+from typing import List, Tuple, Dict
 # --- Search & Analysis ---
-def find_text(query: str, match_case: bool = False, whole_words: bool = False) -> list[tuple[int, int]]:
+def find_text(query: str, match_case: bool = False, whole_words: bool = False) -> List[Tuple[int, int]]:
     doc = get_document()
     search = doc.createSearchDescriptor()
     search.SearchString = query
@@ -101,7 +102,7 @@ def set_footer(text: str, page_style: str = 'Default') -> bool:
     except UnoException:
         return False
 # --- Document Structure & Navigation ---
-def get_document_structure() -> dict:
+def get_document_structure() -> Dict:
     doc = get_document()
     structure = {"headings": [], "paragraphs": [], "tables": [], "images": []}
     # Headings and paragraphs
@@ -292,7 +293,7 @@ def get_document():
         raise RuntimeError("No Writer document is open.")
     return model
 
-def get_document_context() -> dict:
+def get_document_context() -> Dict:
     """Extract basic context: word count, paragraph count, etc."""
     doc = get_document()
     text = doc.Text

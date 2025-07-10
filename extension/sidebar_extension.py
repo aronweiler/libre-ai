@@ -1,5 +1,5 @@
 """
-LibreOffice UNO registration and entry point for the extension.
+UNO Sidebar Panel implementation for LibreAI.
 """
 import sys
 import os
@@ -11,18 +11,21 @@ if parent_dir not in sys.path:
 
 import uno
 import unohelper
-from com.sun.star.task import XJobExecutor
-from extension.main import run
+from com.sun.star.ui import XSidebarPanel
+from extension.ui.sidebar import create_sidebar
 
-class LibreAIAgent(unohelper.Base, XJobExecutor):
+class SidebarPanel(unohelper.Base, XSidebarPanel):
     def __init__(self, ctx):
         self.ctx = ctx
-    def trigger(self, args):
-        run(args)
+        self.panel = None
+    def getComponent(self):
+        if self.panel is None:
+            self.panel = create_sidebar()
+        return self.panel
 
 g_ImplementationHelper = unohelper.ImplementationHelper()
 g_ImplementationHelper.addImplementation(
-    LibreAIAgent,
-    "org.libreai.LibreAIAgent",
-    ("com.sun.star.task.Job",),
+    SidebarPanel,
+    "org.libreai.SidebarPanel",
+    ("com.sun.star.ui.SidebarPanel",),
 )

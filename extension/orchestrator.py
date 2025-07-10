@@ -1,3 +1,18 @@
+# Agentic tool dispatcher integration
+from extension.agentic_tools import call_tool
+
+def handle_agent_task(task_spec):
+    """
+    task_spec: dict with keys 'tool' (str) and 'args' (dict)
+    Example: {'tool': 'insert_section', 'args': {'name': 'Intro'}}
+    """
+    tool_name = task_spec['tool']
+    args = task_spec.get('args', {})
+    try:
+        result = call_tool(tool_name, **args)
+        return {"success": True, "result": result}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 """
 Agentic Orchestrator: Handles user requests, context extraction, and task specification.
 """

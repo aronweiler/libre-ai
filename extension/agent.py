@@ -1,3 +1,17 @@
+# Agentic tool dispatcher integration
+from extension.orchestrator import handle_agent_task
+
+class ToolCallingAgent:
+    """Agent that receives task specs and calls document tools."""
+    def __init__(self):
+        pass
+
+    def perform_task(self, task_spec):
+        """
+        task_spec: dict with keys 'tool' (str) and 'args' (dict)
+        Returns result dict from handle_agent_task.
+        """
+        return handle_agent_task(task_spec)
 """
 Tool-Calling Agent: Receives task specs, performs edits, handles retries, returns results.
 """
@@ -7,8 +21,10 @@ from extension.tools import document_tools
 import logging
 from extension.tools import document_tools
 
+from typing import Dict
+
 class ToolAgent:
-    def perform_edit_task(self, task_spec: dict) -> dict:
+    def perform_edit_task(self, task_spec: Dict) -> Dict:
         """
         Receives a task specification, performs the requested edits (with retries if needed),
         and returns a result dict with status, any errors, and a summary of changes.

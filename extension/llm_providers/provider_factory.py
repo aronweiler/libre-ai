@@ -6,7 +6,8 @@ from .anthropic_provider import AnthropicProvider
 from .google_provider import GoogleProvider
 from .ollama_provider import OllamaProvider
 
-def get_provider(provider_name, config):
+def get_provider_from_config(config):
+    provider_name = config.get('provider', 'openai').lower()
     if provider_name == 'openai':
         return OpenAIProvider(config)
     elif provider_name == 'anthropic':

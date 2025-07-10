@@ -4,7 +4,16 @@ Configuration management for LLM providers and extension settings.
 import os
 import json
 
-CONFIG_PATH = os.path.expanduser("~/.libreai_config.json")
+
+def get_config_path():
+    # Use platform-appropriate config location
+    home = os.path.expanduser("~")
+    config_dir = os.path.join(home, ".libreai")
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir, exist_ok=True)
+    return os.path.join(config_dir, "config.json")
+
+CONFIG_PATH = get_config_path()
 
 
 def load_config():
@@ -34,3 +43,7 @@ def load_config():
 def save_config(config):
     with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2)
+
+def get_env_or_config(key, config):
+    # Environment variable takes precedence
+    return os.environ.get(key.upper()) or config.get(key, "")

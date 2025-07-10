@@ -1,10 +1,18 @@
+def show_error_dialog(ctx, message):
+    smgr = ctx.ServiceManager
+    toolkit = smgr.createInstanceWithContext("com.sun.star.awt.Toolkit", ctx)
+    parent = toolkit.getDesktopWindow()
+    box = toolkit.createMessageBox(parent, MESSAGEBOX, BUTTONS_OK, "Error", message)
+    box.execute()
 """
 Sidebar UI construction using UNO API.
 """
 
 
+
 # Real Sidebar UI implementation using UNO API
 import uno
+import unohelper
 from com.sun.star.awt import XActionListener
 from com.sun.star.awt.PosSize import POS, SIZE
 
@@ -14,6 +22,11 @@ class SidebarActionListener(unohelper.Base, XActionListener):
     def actionPerformed(self, action_event):
         self.callback(action_event)
 
+
+from extension.main import LibreAIMain
+from extension.ui.config_dialog import ConfigDialog
+from extension.conversation_manager import ConversationManager
+
 def create_sidebar():
     ctx = uno.getComponentContext()
     smgr = ctx.ServiceManager
@@ -21,42 +34,35 @@ def create_sidebar():
     parent_win = doc.CurrentController.Frame.ContainerWindow
     toolkit = smgr.createInstanceWithContext("com.sun.star.awt.Toolkit", ctx)
 
-    # Main dialog window (sidebar panel)
     width, height = 350, 600
     sidebar = toolkit.createWindow({
         'Type': uno.getConstantByName('com.sun.star.awt.WindowClass.TOP'),
         'Parent': parent_win,
         'Bounds': (0, 0, width, height),
-        'WindowAttributes': 0x10 | 0x20  # SIZEABLE | MOVEABLE
+        'WindowAttributes': 0x10 | 0x20
     })
     sidebar.setVisible(True)
 
-    # Conversation area (scrollable)
     conversation_area = toolkit.createTextArea()
     conversation_area.setPosSize(10, 10, width-20, 350, POS | SIZE)
     conversation_area.setReadOnly(True)
     sidebar.addChild(conversation_area)
 
-    # User input box
     input_box = toolkit.createTextField()
     input_box.setPosSize(10, 370, width-90, 30, POS | SIZE)
     input_box.setText("")
     sidebar.addChild(input_box)
 
-    # Send button
     send_button = toolkit.createButton()
     send_button.setPosSize(width-70, 370, 60, 30, POS | SIZE)
     send_button.setLabel("Send")
     sidebar.addChild(send_button)
 
-
-    # Status label
     status_label = toolkit.createLabel()
     status_label.setPosSize(10, 410, width-120, 20, POS | SIZE)
     status_label.setText("")
     sidebar.addChild(status_label)
 
-    # Spinner/progress bar for AI response
     progress_bar = toolkit.createProgressBar()
     progress_bar.setPosSize(width-100, 410, 90, 20, POS | SIZE)
     progress_bar.setRange(0, 100)
@@ -64,14 +70,67 @@ def create_sidebar():
     progress_bar.setVisible(False)
     sidebar.addChild(progress_bar)
 
-    # Clear conversation button
     clear_button = toolkit.createButton()
     clear_button.setPosSize(10, 440, width-20, 30, POS | SIZE)
     clear_button.setLabel("Clear Conversation")
     sidebar.addChild(clear_button)
 
-    # Message history in memory
-    message_history = []
+    config_button = toolkit.createButton()
+    config_button.setPosSize(width-120, 480, 110, 30, POS | SIZE)
+    config_button.setLabel("Config")
+    sidebar.addChild(config_button)
+
+    libreai = LibreAIMain()
+
+    def update_conversation():
+        text = ""
+        for m in libreai.conversation.get_history():
+            if m["role"] == "user":
+                text += f"[User] {m['content']}\n"
+            else:
+                text += f"[AI] {m['content']}\n"
+        conversation_area.setText(text)
+
+    def send_clicked(_):
+        user_message = input_box.getText().strip()
+        if not user_message:
+            status_label.setText("Input is empty.")
+            return
+        status_label.setText("Thinking...")
+        progress_bar.setVisible(True)
+        try:
+            result = libreai.process_user_request(user_message)
+            update_conversation()
+            status_label.setText("")
+            input_box.setText("")
+            if result.get("tool_result") and not result["tool_result"].get("success", True):
+                show_error_dialog(ctx, f"Tool error: {result['tool_result']['error']}")
+        except Exception as e:
+            show_error_dialog(ctx, f"AI error: {str(e)}")
+            status_label.setText("Error occurred.")
+        finally:
+            progress_bar.setVisible(False)
+
+    def clear_clicked(_):
+        try:
+            libreai.conversation = ConversationManager(max_tokens=100000, summarizer=libreai._summarize)
+            update_conversation()
+            status_label.setText("Conversation cleared.")
+        except Exception as e:
+            show_error_dialog(ctx, f"Error clearing conversation: {str(e)}")
+
+    def config_clicked(_):
+        try:
+            ConfigDialog(ctx).show_dialog()
+            libreai.reload_provider()
+        except Exception as e:
+            show_error_dialog(ctx, f"Error opening config: {str(e)}")
+
+    send_button.addActionListener(SidebarActionListener(send_clicked))
+    clear_button.addActionListener(SidebarActionListener(clear_clicked))
+    config_button.addActionListener(SidebarActionListener(config_clicked))
+
+    update_conversation()
 
 
 def update_conversation():
