@@ -1,6 +1,6 @@
 # Core dependencies
 langchain
+langchain-openai
+langchain-anthropic
 openai
 anthropic
-# For UNO API
-unopython

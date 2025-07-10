@@ -1,0 +1,16 @@
+# Dockerfile.windows
+# Build a Windows-compatible .oxt using a Windows Python 3.10.18 base image
+# Note: This requires Docker for Windows with Windows containers enabled.
+FROM mcr.microsoft.com/windows/python:3.10.18
+
+WORKDIR C:/workspace
+COPY . C:/workspace
+
+# Upgrade pip, wheel, setuptools
+RUN python -m pip install --upgrade pip wheel setuptools
+
+# Print Python version for verification
+RUN python --version
+
+# Build the .oxt (output will be C:/workspace/libreai.oxt)
+CMD ["python", "package_oxt.py"]

@@ -1,11 +1,21 @@
-import tiktoken
+
+# Try to import tiktoken, otherwise use a fallback estimator
+try:
+    import tiktoken
+    _TIKTOKEN_AVAILABLE = True
+except ImportError:
+    tiktoken = None
+    _TIKTOKEN_AVAILABLE = False
 
 class ConversationManager:
     def __init__(self, max_tokens=100000, summarizer=None):
         self.max_tokens = max_tokens
         self.summarizer = summarizer  # Should be a callable that summarizes conversation
         self.history = []  # List of dicts: {"role": "user"|"ai", "content": str}
-        self.tokenizer = tiktoken.get_encoding("cl100k_base")
+        if _TIKTOKEN_AVAILABLE:
+            self.tokenizer = tiktoken.get_encoding("cl100k_base")
+        else:
+            self.tokenizer = None
 
     def add_message(self, role, content):
         self.history.append({"role": role, "content": content})
@@ -15,7 +25,10 @@ class ConversationManager:
         return self.history
 
     def _count_tokens(self, text):
-        return len(self.tokenizer.encode(text))
+        if self.tokenizer:
+            return len(self.tokenizer.encode(text))
+        # Fallback: estimate 1 token ≈ 4 characters (OpenAI heuristic)
+        return max(1, len(text) // 4)
 
     def _total_tokens(self):
         return sum(self._count_tokens(m["content"]) for m in self.history)
